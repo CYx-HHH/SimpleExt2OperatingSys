@@ -1,6 +1,6 @@
 #pragma warning(disable:4996)
 #include"filesystem.h"
-#include<string>
+#include<cstring>
 #include<conio.h>
 #include<iostream>
 using namespace std;
@@ -9,7 +9,7 @@ bool isLogin;
 int file_content_loc = 24576;
 
 
-string error[] = { "/","\\", ":","<",">","|","*","&" };  //ÃüÃûÖĞµÄ·Ç·¨×Ö·û
+string error[] = { "/","\\", ":","<",">","|","*","&" };  //å‘½åä¸­çš„éæ³•å­—ç¬¦
 
 FileSystem::FileSystem()
 {
@@ -34,7 +34,7 @@ FileSystem::FileSystem()
 		disk.read(0,username, 2082, 12);
 		disk.read(12,pwd, 2082, 20);
 		disk.read(0,2083, Node, 1024 * 32 * sizeof(Inode));
-		///***  ¿ªÊ¼¶Á DIR 
+		///***  å¼€å§‹è¯» DIR 
 		currentDir = &root;
 		disk.read(0,(char*)&file_count, 10275, 10);
 		disk.read(10, (char*)&dir_count, 10275, 22);
@@ -91,7 +91,7 @@ void FileSystem::format()
 	disk.write(0, (char*)&file_count, 10275, 10);
 	disk.write(10, (char*)&dir_count, 10275, 22);
 
-	//Ğ´ DIR FILE
+	//å†™ DIR FILE
 	root.dirPTR = nullptr;
 	root.filePTR = nullptr;
 	root.nextdir = nullptr;
@@ -121,34 +121,40 @@ void FileSystem::format()
 	disk.write(0, &ch, 24576, 8192 * 32);
 }
 
-void inPasswd(char passwd[])	//ÊäÈëÃÜÂë
+void inPasswd(char passwd[])	//è¾“å…¥å¯†ç 
 {
 	int plen = 0;
 	char c;
-	fflush(stdin);	//Çå¿Õ»º³åÇø
 	printf("passwd:");
-	while (c = getch()) {
-		if (c == '\r') {	//ÊäÈë»Ø³µ£¬ÃÜÂëÈ·¶¨
+    fflush(stdout);
+
+	while (c = getch()){
+		if (c == '\r') {	//è¾“å…¥å›è½¦ï¼Œå¯†ç ç¡®å®š
 			passwd[plen] = '\0';
-			fflush(stdin);	//Çå»º³åÇø
-			printf("\n");
 			break;
 		}
-		else if (c == '\b') {	//ÍË¸ñ£¬É¾³ıÒ»¸ö×Ö·û
-			if (plen != 0) {	//Ã»ÓĞÉ¾µ½Í·
+		else if (c == '\b') {	//é€€æ ¼ï¼Œåˆ é™¤ä¸€ä¸ªå­—ç¬¦
+			if (plen > 0) {	//æ²¡æœ‰åˆ åˆ°å¤´
 				plen--;
-			}
+                printf("\b \b");
+                fflush(stdout);
+			}//else{ fflush(stdin);}
 		}
-		else {	//ÃÜÂë×Ö·û
+		else {	//å¯†ç å­—ç¬¦
 			passwd[plen++] = c;
+            printf("*");
+            fflush(stdout);
 		}
 	}
 }
 
-void inUsername(char username[])	//ÊäÈëÓÃ»§Ãû
+void inUsername(char username[])	//è¾“å…¥ç”¨æˆ·å
 {
 	printf("username:");
-	scanf("%s", username);	//ÓÃ»§Ãû
+    fflush(stdout);	//æ¸…ç©ºç¼“å†²åŒº
+
+	scanf("%s", username);	//ç”¨æˆ·å
+    fflush(stdin);	//æ¸…ç©ºç¼“å†²åŒº
 }
 
 bool FileSystem::check(char* uname, char* passwd)
@@ -165,13 +171,14 @@ bool FileSystem::check(char* uname, char* passwd)
 	}return true;
 }
 
-bool FileSystem::login()	//µÇÂ½½çÃæ
+bool FileSystem::login()	//ç™»é™†ç•Œé¢
 {
 	char uname[100] = { 0 };
 	char passwd[100] = { 0 };
-	inUsername(uname);	//ÊäÈëÓÃ»§Ãû
-	inPasswd(passwd);		//ÊäÈëÓÃ»§ÃÜÂë
-	if (check(uname,passwd)) {	//ºË¶ÔÓÃ»§ÃûºÍÃÜÂë
+	inUsername(uname);	//è¾“å…¥ç”¨æˆ·å
+	inPasswd(passwd);		//è¾“å…¥ç”¨æˆ·å¯†ç 
+    cout<<endl;
+	if (check(uname,passwd)) {	//æ ¸å¯¹ç”¨æˆ·åå’Œå¯†ç 
 		isLogin = true;
 		cout << "Login Success			-OK" << endl;
 		return true;
@@ -182,12 +189,12 @@ bool FileSystem::login()	//µÇÂ½½çÃæ
 	}
 }
 
-void FileSystem::logout()	//ÓÃ»§×¢Ïú
+void FileSystem::logout()	//ç”¨æˆ·æ³¨é”€
 {
-	//»Øµ½¸ùÄ¿Â¼
+	//å›åˆ°æ ¹ç›®å½•
 	currentDir = &root;
 	isLogin = false;
-	printf("ÓÃ»§×¢Ïú\n");
+	printf("ç”¨æˆ·æ³¨é”€\n");
 	system("pause");
 	system("cls");
 }
@@ -244,13 +251,13 @@ void FileSystem::node_in_use(int nodeloc)
 	return;
 }
 
-MyDir* FileSystem::Find_path(char* path)///***   /home/etc/ ´Óroot¿ªÊ¼ÕÒ
+MyDir* FileSystem::Find_path(char* path)///***   /home/etc/ ä»rootå¼€å§‹æ‰¾
 {                                       ///*** /home/etc
 	char ch[] = "/";
 	char* res = nullptr;
 	MyDir* tmp = NULL;
 
-	if (path[0] == '.' && path[1] == '.' && path[2] != '.') ///***  ·ÀÖ¹³öÏÖ  .../ »ò ...../ 
+	if (path[0] == '.' && path[1] == '.' && path[2] != '.') ///***  é˜²æ­¢å‡ºç°  .../ æˆ– ...../ 
 	{
 		tmp = currentDir->predir;
 		if (!tmp)
@@ -274,8 +281,8 @@ MyDir* FileSystem::Find_path(char* path)///***   /home/etc/ ´Óroot¿ªÊ¼ÕÒ
 		}
 	}
 
-	while (res != NULL)            ///*** ÑéÖ¤ÏÂ ../aaa ºÍ./ff  
-	{                               ///*** ²»ÖªµÀdir½á¹¹ÊÇ·ñ¿É¶Á  fileµÄ¶ÁÈ¡»¹Ã»Ğ´
+	while (res != NULL)            ///*** éªŒè¯ä¸‹ ../aaa å’Œ./ff  
+	{                               ///*** ä¸çŸ¥é“dirç»“æ„æ˜¯å¦å¯è¯»  fileçš„è¯»å–è¿˜æ²¡å†™
 		res = strtok(NULL, ch);
 		if (res)
 		{
@@ -299,14 +306,14 @@ MyDir* FileSystem::Find_path(char* path)///***   /home/etc/ ´Óroot¿ªÊ¼ÕÒ
 	}
 }
 
-MyDir* FileSystem::Find_subpath(char* path) ///*** ²éÕÒ×ÓÄ¿Â¼ 
+MyDir* FileSystem::Find_subpath(char* path) ///*** æŸ¥æ‰¾å­ç›®å½• 
 {
 	char ch[] = "/";
 	char* res = nullptr;
 	int f = 0;
 	if (path[0] == '/')
 		f = 1;
-	if (path[0] == '.' && path[2] != '.') ///***  ·ÀÖ¹³öÏÖ  .../ »ò ...../ 
+	if (path[0] == '.' && path[2] != '.') ///***  é˜²æ­¢å‡ºç°  .../ æˆ– ...../ 
 	{
 		path = path + 2;
 	}
@@ -340,7 +347,7 @@ MyDir* FileSystem::Find_subpath(char* path) ///*** ²éÕÒ×ÓÄ¿Â¼
 	}
 }
 
-MyDir* FileSystem::find_dir(MyDir* d, char* dir) /// dÒÔ¼°dµÄ×ÓÄ¿Â¼
+MyDir* FileSystem::find_dir(MyDir* d, char* dir) /// dä»¥åŠdçš„å­ç›®å½•
 {
 	if (!d)
 	{
@@ -591,7 +598,7 @@ int FileSystem::delFile(char* ch)
 		return 0;
 	}
 	int loc = 0;
-	MyDir* d = currentDir;   ///*** ÉÏ¼¶¸÷Ä¿Â¼´óĞ¡
+	MyDir* d = currentDir;   ///*** ä¸Šçº§å„ç›®å½•å¤§å°
 	while (d != 0)
 	{
 		d->size -= f->size;
@@ -627,7 +634,7 @@ int FileSystem::del_dir(MyDir* dir)
 	Dir[dloc].filecount = 0;
 	Dir[dloc].filePTR = NULL;
 	Dir[dloc].nextdir = NULL;
-	Dir[dloc].nodeloc = -1;     /////////###########  ×î¹Ø¼üµÄ
+	Dir[dloc].nodeloc = -1;     /////////###########  æœ€å…³é”®çš„
 	Dir[dloc].predir = NULL;
 	Dir[dloc].size = 0;
 	disk.write(0, Dir + ploc, 10278 + ploc * 2);
@@ -656,13 +663,13 @@ int FileSystem::delDir(char* ch)
 		cout << "DELETE			-FALSE" << endl;
 		return 0;
 	}
-	///*******  ¸ÄÄ¿Â¼½á¹¹
+	///*******  æ”¹ç›®å½•ç»“æ„
 	if (p == currentDir->dirPTR)
 		currentDir->dirPTR = currentDir->dirPTR->nextdir;
 	else
 		pre->nextdir = p->nextdir;
 
-	///*******  ÏòÉÏ¸÷¼¶Ä¿Â¼´óĞ¡
+	///*******  å‘ä¸Šå„çº§ç›®å½•å¤§å°
 	pre = currentDir;
 	int loc = 0;
 	while (pre != nullptr)
@@ -680,7 +687,7 @@ int FileSystem::delDir(char* ch)
 		disk.write(0, Dir + loc, pre->nodeloc);
 		pre = pre->predir;
 	}
-	///*******  É¾³ıÄ¿Â¼ÏÂÎÄ¼ş 
+	///*******  åˆ é™¤ç›®å½•ä¸‹æ–‡ä»¶ 
 	MyDir* d = p->dirPTR;
 	MyFile* f = p->filePTR;
 	
@@ -730,7 +737,7 @@ int FileSystem::write_file(MyFile* file, int nodeloc)
 	if (file->size % 32 != 0)
 		flen++;
 
-	if (flen > (1023 - group_desc.freeBlock) * 32) ///***  ÎÄ¼ş´óÓÚÄÚ´æ¿Õ¼ä
+	if (flen > (1023 - group_desc.freeBlock) * 32) ///***  æ–‡ä»¶å¤§äºå†…å­˜ç©ºé—´
 		return -1;
 	Inode *lastnode, *tnode;
 	lastnode = NULL;
@@ -764,7 +771,7 @@ int FileSystem::write_file(MyFile* file, int nodeloc)
 
 			node_in_use(bloc * 32 + i);
 			update_writein(bloc * 32 + i);
-			disk.write(0, tmpc, bloc * 32 + i, 32); ////****Ğ´ÈëÎÄ¼şµÄcontent
+			disk.write(0, tmpc, bloc * 32 + i, 32); ////****å†™å…¥æ–‡ä»¶çš„content
 			lastnode = tnode;
 			loc = bloc * 32 + i;
 			flen--;
@@ -795,7 +802,7 @@ int FileSystem::Write_File(MyFile* file, char* ch)
 	}
 	file->size = size;
 
-	MyDir* pre;  ///*** ÉÏ¼¶¸÷Ä¿Â¼´óĞ¡
+	MyDir* pre;  ///*** ä¸Šçº§å„ç›®å½•å¤§å°
 	pre = currentDir;
 	int loc = 0;
 	while (pre != nullptr)
@@ -815,7 +822,7 @@ int FileSystem::Write_File(MyFile* file, char* ch)
 	return 0;
 }
 
-//int FileSystem::renameDir(char* dir, char* ch)///*** ÖØÃüÃû ×ÓÄ¿Â¼ 
+//int FileSystem::renameDir(char* dir, char* ch)///*** é‡å‘½å å­ç›®å½• 
 //{
 //	string tempname = ch;
 //	for (int i = 0; i < 8; ++i)
@@ -854,7 +861,7 @@ int FileSystem::Write_File(MyFile* file, char* ch)
 //	cout << "RENAME			-OK" << endl;
 //	return 1;
 //}
-int FileSystem::renameFile(char* file, char* ch)///*** ÖØÃüÃû ×ÓÎÄ¼ş
+int FileSystem::renameFile(char* file, char* ch)///*** é‡å‘½å å­æ–‡ä»¶
 {
 	string tempname = ch;
 	for (int i = 0; i < 8; ++i)
@@ -937,7 +944,7 @@ MyFile* FileSystem::copyFile(char* file)
 	return copytempfile;
 }
 
-int FileSystem::pasteFile(MyDir* path)///************* more echo,copyµÄcontentĞèÒª¶Á³öÀ´! export import 
+int FileSystem::pasteFile(MyDir* path)///************* more echo,copyçš„contentéœ€è¦è¯»å‡ºæ¥! export import 
 {
 	MyFile* h = path->filePTR;
 	if (copytempfile == NULL)
@@ -988,11 +995,11 @@ int FileSystem::pasteFile(MyDir* path)///************* more echo,copyµÄcontentĞè
 	Node[p->nodeloc].i_size = 32;
 	Node[p->nodeloc+1].i_ptr = -1;
 	Node[p->nodeloc+1].i_size = 32 - sizeof(MyFile);    
-	///*** ½á¹¹ÌåĞ´½ø¿Õ¼ä
+	///*** ç»“æ„ä½“å†™è¿›ç©ºé—´
 	disk.write(sizeof(Inode) * (p->nodeloc), Node + p->nodeloc, 2083, sizeof(Inode));
 	disk.write(sizeof(Inode) * (p->nodeloc + 1), Node + p->nodeloc + 1, 2083, sizeof(Inode));
 	disk.write(0, (char*)&file_count, 10275, 10);
-	///*** ÄÚÈİĞ´½ø¿Õ¼ä
+	///*** å†…å®¹å†™è¿›ç©ºé—´
 	int size = p->size;
 	int t = p->nodeloc;
 	while (write_file(p, t) < 0) {
@@ -1003,7 +1010,7 @@ int FileSystem::pasteFile(MyDir* path)///************* more echo,copyµÄcontentĞè
 	MyDir* pre;
 	pre = currentDir;
 	currentDir->filecount++;
-	while (pre != nullptr)    ///***  ÉÏ¼¶¸öÄ¿Â¼´óĞ¡
+	while (pre != nullptr)    ///***  ä¸Šçº§ä¸ªç›®å½•å¤§å°
 	{
 		pre->size += p->size;
 		if (pre->nodeloc == root.nodeloc)
@@ -1061,7 +1068,7 @@ bool FileSystem::cd(char* path)
 			currentDir = &root;
 			break;
 		default:
-			return false;             ///*** ÃüÁî´íÎó 
+			return false;             ///*** å‘½ä»¤é”™è¯¯ 
 		}
 		return true;;
 	}
@@ -1143,10 +1150,10 @@ void FileSystem::echo(char* s, char* file)
 	return;
 }
 
-int FileSystem::import_file(char* file, char* path)///*** -->ÆäËû´ÅÅÌÎÄ¼ş¸´ÖÆµ½µ±Ç°Ä¿Â¼
+int FileSystem::import_file(char* file, char* path)///*** -->å…¶ä»–ç£ç›˜æ–‡ä»¶å¤åˆ¶åˆ°å½“å‰ç›®å½•
 {
 	disk.disk_int->open(path, ios::in);
-	char* ch = new char[8192 * 32]{ 0 }; ////ÎÄ¼ş×î´óÄÚÈİ
+	char* ch = new char[8192 * 32]{ 0 }; ////æ–‡ä»¶æœ€å¤§å†…å®¹
 	int cnt = 0;
 	while (!disk.disk_int->eof())
 	{
@@ -1171,7 +1178,7 @@ int FileSystem::import_file(char* file, char* path)///*** -->ÆäËû´ÅÅÌÎÄ¼ş¸´ÖÆµ½µ
 	disk.write(0, (char*)&file_count, 10275, 10);
 	f->size = strlen(ch);
 	int loc = 0;
-	while (pre != nullptr)    ///***  ÉÏ¼¶¸öÄ¿Â¼´óĞ¡
+	while (pre != nullptr)    ///***  ä¸Šçº§ä¸ªç›®å½•å¤§å°
 	{
 		pre->size += f->size;
 		if (pre->nodeloc == root.nodeloc)
@@ -1189,7 +1196,7 @@ int FileSystem::import_file(char* file, char* path)///*** -->ÆäËû´ÅÅÌÎÄ¼ş¸´ÖÆµ½µ
 	return 1;
 }
 
-int FileSystem::export_file(char* file, char* path)///*** -->µ±Ç°Ä¿Â¼ÎÄ¼ş¸´ÖÆµ½ÆäËû´ÅÅÌÂ·¾¶
+int FileSystem::export_file(char* file, char* path)///*** -->å½“å‰ç›®å½•æ–‡ä»¶å¤åˆ¶åˆ°å…¶ä»–ç£ç›˜è·¯å¾„
 {
 	MyFile* f = currentDir->filePTR;
 	while (f)
@@ -1211,7 +1218,7 @@ int FileSystem::export_file(char* file, char* path)///*** -->µ±Ç°Ä¿Â¼ÎÄ¼ş¸´ÖÆµ½Æ
 	disk.disk_int->open(ch, ios::out);
 	if (!disk.disk_int->is_open())
 	{
-		cout << "Î´ÄÜ´ò¿ªÎÄ¼ş." << endl;
+		cout << "æœªèƒ½æ‰“å¼€æ–‡ä»¶." << endl;
 		return 0;
 	}
 	if (f->content)
@@ -1227,7 +1234,7 @@ void FileSystem::remove(char* file, char* path1, char* path2)
 	char* tp2 = new char[strlen(path2)];
 	strcpy(tp1, path1);
 	strcpy(tp2, path2);
-	d1 = Find_path(tp1); ///*** ¾ø¶ÔÂ·¾¶ ºÍ ×ÓÄ¿Â¼ ²éÕÒ
+	d1 = Find_path(tp1); ///*** ç»å¯¹è·¯å¾„ å’Œ å­ç›®å½• æŸ¥æ‰¾
 	d2 = Find_path(tp2);
 
 	if (!d1) {
@@ -1282,7 +1289,7 @@ void FileSystem::remove(char* file, char* path1, char* path2)
 	MyDir* pre;
 	pre = d2;
 	int loc = 0;
-	while (pre != nullptr)    ///***  ÉÏ¼¶¸öÄ¿Â¼´óĞ¡
+	while (pre != nullptr)    ///***  ä¸Šçº§ä¸ªç›®å½•å¤§å°
 	{
 		pre->size += f1->size;
 		if (pre->nodeloc == root.nodeloc)
@@ -1297,7 +1304,7 @@ void FileSystem::remove(char* file, char* path1, char* path2)
 		pre = pre->predir;
 	}
 	pre = d1;
-	while (pre != nullptr)    ///***  ÉÏ¼¶¸öÄ¿Â¼´óĞ¡
+	while (pre != nullptr)    ///***  ä¸Šçº§ä¸ªç›®å½•å¤§å°
 	{
 		pre->size -= f1->size;
 		if (pre->nodeloc == root.nodeloc)
